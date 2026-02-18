@@ -29,7 +29,7 @@ export function StoriesBar() {
     const first = grouped[groupIndex][0];
     if (!first.viewed) {
       storiesApi.markViewed(first.id).catch(() => {});
-      setStories(prev => prev.map(s => s.id === first.id ? { ...s, viewed: true } : s));
+      setStories(prev => prev.map(s => (s.id === first.id ? { ...s, viewed: true } : s)));
     }
   };
 
@@ -42,7 +42,7 @@ export function StoriesBar() {
       const first = grouped[nextIdx][0];
       if (!first.viewed) {
         storiesApi.markViewed(first.id).catch(() => {});
-        setStories(prev => prev.map(s => s.id === first.id ? { ...s, viewed: true } : s));
+        setStories(prev => prev.map(s => (s.id === first.id ? { ...s, viewed: true } : s)));
       }
     } else {
       handleClose();
