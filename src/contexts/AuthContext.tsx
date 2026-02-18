@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 import type { User, AuthState, SubscriptionTier } from '../types';
-import { loginUser, registerUser, resetPassword } from '../services/mockData';
+import { auth as authApi, setAuthToken, clearAuthToken } from '../services/api';
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>;
@@ -23,7 +23,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     setState((s) => ({ ...s, isLoading: true, error: null }));
     try {
-      const user = await loginUser(email, password);
+      const { user, token } = await authApi.login(email, password);
+      setAuthToken(token);
       setState({ user, isAuthenticated: true, isLoading: false, error: null });
     } catch (err) {
       setState((s) => ({
@@ -37,7 +38,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = useCallback(async (username: string, email: string, password: string) => {
     setState((s) => ({ ...s, isLoading: true, error: null }));
     try {
-      const user = await registerUser(username, email, password);
+      const { user, token } = await authApi.register(username, email, password);
+      setAuthToken(token);
       setState({ user, isAuthenticated: true, isLoading: false, error: null });
     } catch (err) {
       setState((s) => ({
@@ -49,13 +51,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
+    clearAuthToken();
     setState({ user: null, isAuthenticated: false, isLoading: false, error: null });
   }, []);
 
   const requestPasswordReset = useCallback(async (email: string) => {
     setState((s) => ({ ...s, isLoading: true, error: null }));
     try {
-      await resetPassword(email);
+      await authApi.resetPassword(email);
       setState((s) => ({ ...s, isLoading: false }));
     } catch (err) {
       setState((s) => ({

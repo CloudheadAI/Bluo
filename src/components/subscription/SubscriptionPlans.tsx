@@ -1,14 +1,35 @@
+import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { subscriptionPlans } from '../../services/mockData';
+import { subscriptionPlans } from '../../config/plans';
+import { payments as paymentsApi } from '../../services/api';
 import { Button } from '../common';
 import type { SubscriptionTier } from '../../types';
 
 export function SubscriptionPlans() {
   const { user, updateSubscription } = useAuth();
   const currentTier = user?.subscriptionTier || 'free';
+  const [processingTier, setProcessingTier] = useState<SubscriptionTier | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSelect = (tier: SubscriptionTier) => {
-    updateSubscription(tier);
+  const handleSelect = async (tier: SubscriptionTier) => {
+    setError(null);
+    setProcessingTier(tier);
+
+    try {
+      const session = await paymentsApi.createCheckout(tier);
+
+      if (session.url && !session.url.startsWith('#')) {
+        window.location.href = session.url;
+        return;
+      }
+
+      // Demo mode or free plan: apply immediately
+      updateSubscription(tier);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Payment failed. Please try again.');
+    } finally {
+      setProcessingTier(null);
+    }
   };
 
   return (
@@ -20,9 +41,16 @@ export function SubscriptionPlans() {
         </p>
       </div>
 
+      {error && (
+        <div role="alert" className="mb-6 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl text-center">
+          {error}
+        </div>
+      )}
+
       <div className="grid md:grid-cols-3 gap-4">
         {subscriptionPlans.map((plan) => {
           const isCurrent = plan.tier === currentTier;
+          const isProcessing = processingTier === plan.tier;
           return (
             <div
               key={plan.id}
@@ -82,7 +110,8 @@ export function SubscriptionPlans() {
                 onClick={() => handleSelect(plan.tier)}
                 variant={isCurrent ? 'secondary' : 'primary'}
                 className="w-full"
-                disabled={isCurrent}
+                disabled={isCurrent || isProcessing}
+                isLoading={isProcessing}
               >
                 {isCurrent ? 'Current Plan' : plan.price === 0 ? 'Downgrade' : 'Upgrade'}
               </Button>
@@ -90,6 +119,11 @@ export function SubscriptionPlans() {
           );
         })}
       </div>
+
+      <p className="text-center text-xs text-gray-400 mt-6">
+        Payments processed securely by Stripe. By subscribing you agree to our{' '}
+        <a href="/terms" className="underline hover:text-gray-600">Terms of Service</a>.
+      </p>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 import type { Notification } from '../types';
-import { fetchNotifications } from '../services/mockData';
+import { notifications as notifApi } from '../services/api';
 
 interface NotificationContextType {
   notifications: Notification[];
@@ -22,7 +22,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const loadNotifications = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await fetchNotifications();
+      const data = await notifApi.list();
       setNotifications(data);
     } catch {
       // silently handle
@@ -33,10 +33,12 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   const markAsRead = useCallback((id: string) => {
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+    notifApi.markRead(id).catch(() => { /* silently handle */ });
   }, []);
 
   const markAllAsRead = useCallback(() => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    notifApi.markAllRead().catch(() => { /* silently handle */ });
   }, []);
 
   return (

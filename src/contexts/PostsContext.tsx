@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
-import type { Post, Comment } from '../types';
-import { fetchPosts, createPost as apiCreatePost, mockUser } from '../services/mockData';
+import type { Post } from '../types';
+import { posts as postsApi } from '../services/api';
 
 interface PostsContextType {
   posts: Post[];
@@ -24,7 +24,7 @@ export function PostsProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await fetchPosts();
+      const data = await postsApi.list();
       setPosts(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load posts');
@@ -35,7 +35,7 @@ export function PostsProvider({ children }: { children: ReactNode }) {
 
   const addPost = useCallback(async (content: string) => {
     try {
-      const post = await apiCreatePost(content);
+      const post = await postsApi.create(content);
       setPosts((prev) => [post, ...prev]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create post');
@@ -43,38 +43,27 @@ export function PostsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const likePost = useCallback((postId: string) => {
-    setPosts((prev) =>
-      prev.map((p) =>
-        p.id === postId
-          ? { ...p, isLiked: !p.isLiked, likes: p.isLiked ? p.likes - 1 : p.likes + 1 }
-          : p
-      )
-    );
+    postsApi.like(postId).then(({ isLiked, likes }) => {
+      setPosts((prev) =>
+        prev.map((p) => (p.id === postId ? { ...p, isLiked, likes } : p))
+      );
+    }).catch(() => { /* silently handle */ });
   }, []);
 
   const sharePost = useCallback((postId: string) => {
-    setPosts((prev) =>
-      prev.map((p) =>
-        p.id === postId
-          ? { ...p, isShared: !p.isShared, shares: p.isShared ? p.shares - 1 : p.shares + 1 }
-          : p
-      )
-    );
+    postsApi.share(postId).then(({ isShared, shares }) => {
+      setPosts((prev) =>
+        prev.map((p) => (p.id === postId ? { ...p, isShared, shares } : p))
+      );
+    }).catch(() => { /* silently handle */ });
   }, []);
 
   const addComment = useCallback((postId: string, content: string) => {
-    const newComment: Comment = {
-      id: `c${Date.now()}`,
-      author: mockUser,
-      postId,
-      content,
-      likes: 0,
-      isLiked: false,
-      createdAt: new Date().toISOString(),
-    };
-    setPosts((prev) =>
-      prev.map((p) => (p.id === postId ? { ...p, comments: [...p.comments, newComment] } : p))
-    );
+    postsApi.addComment(postId, content).then((comment) => {
+      setPosts((prev) =>
+        prev.map((p) => (p.id === postId ? { ...p, comments: [...p.comments, comment] } : p))
+      );
+    }).catch(() => { /* silently handle */ });
   }, []);
 
   return (

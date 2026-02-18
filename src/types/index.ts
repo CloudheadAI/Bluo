@@ -135,3 +135,24 @@ export interface PostsState {
   isLoading: boolean;
   error: string | null;
 }
+
+export interface Story {
+  id: string;
+  author: Pick<User, 'id' | 'username' | 'displayName' | 'avatarUrl'>;
+  content: string;
+  createdAt: string;
+  expiresAt: string;
+  viewed: boolean;
+}
+
+export interface CheckoutSession {
+  id: string;
+  url: string;
+  planId: string;
+  tier: SubscriptionTier;
+  status: 'open' | 'complete' | 'expired';
+}
+
+export interface ApiErrorResponse {
+  error: string;
+}

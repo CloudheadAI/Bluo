@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 import type { Achievement, LeaderboardEntry } from '../types';
-import { fetchAchievements, fetchLeaderboard } from '../services/mockData';
+import { gamification as gamApi } from '../services/api';
 
 interface GamificationContextType {
   points: number;
@@ -15,19 +15,20 @@ interface GamificationContextType {
 const GamificationContext = createContext<GamificationContextType | undefined>(undefined);
 
 export function GamificationProvider({ children }: { children: ReactNode }) {
-  const [points, setPoints] = useState(2450);
+  const [points, setPoints] = useState(0);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const addPoints = useCallback((amount: number) => {
     setPoints((p) => p + amount);
+    gamApi.addPoints(amount).catch(() => { /* silently handle */ });
   }, []);
 
   const loadAchievements = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await fetchAchievements();
+      const data = await gamApi.achievements();
       setAchievements(data);
     } catch {
       // silently handle
@@ -39,7 +40,7 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
   const loadLeaderboard = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await fetchLeaderboard();
+      const data = await gamApi.leaderboard();
       setLeaderboard(data);
     } catch {
       // silently handle
