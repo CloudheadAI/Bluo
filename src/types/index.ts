@@ -135,3 +135,20 @@ export interface PostsState {
   isLoading: boolean;
   error: string | null;
 }
+
+export interface PaymentIntent {
+  id: string;
+  amount: number;
+  currency: string;
+  status: 'pending' | 'succeeded' | 'failed' | 'canceled';
+  planId: string;
+  createdAt: string;
+}
+
+export interface CheckoutSession {
+  id: string;
+  url: string;
+  planId: string;
+  tier: SubscriptionTier;
+  status: 'open' | 'complete' | 'expired';
+}

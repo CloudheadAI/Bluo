@@ -133,9 +133,18 @@ export function MobileNav() {
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
-      <main className="max-w-4xl mx-auto px-4 py-6 pb-20 md:pb-6">{children}</main>
+      <main className="max-w-4xl mx-auto px-4 py-6 pb-20 md:pb-6 flex-1 w-full">{children}</main>
+      <footer className="border-t border-gray-100 bg-white py-4 hidden md:block">
+        <div className="max-w-4xl mx-auto px-4 flex items-center justify-between text-xs text-gray-400">
+          <span>&copy; {new Date().getFullYear()} Bluo</span>
+          <div className="flex gap-4">
+            <Link to="/terms" className="hover:text-gray-600 transition-colors">Terms of Service</Link>
+            <Link to="/privacy" className="hover:text-gray-600 transition-colors">Privacy Policy</Link>
+          </div>
+        </div>
+      </footer>
       <MobileNav />
     </div>
   );
