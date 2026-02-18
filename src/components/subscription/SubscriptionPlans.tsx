@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { subscriptionPlans } from '../../services/mockData';
-import { createCheckoutSession } from '../../services/paymentService';
+import { subscriptionPlans } from '../../config/plans';
+import { payments as paymentsApi } from '../../services/api';
 import { Button } from '../common';
 import type { SubscriptionTier } from '../../types';
 
@@ -16,7 +16,7 @@ export function SubscriptionPlans() {
     setProcessingTier(tier);
 
     try {
-      const session = await createCheckoutSession(tier);
+      const session = await paymentsApi.createCheckout(tier);
 
       if (session.url && !session.url.startsWith('#')) {
         window.location.href = session.url;

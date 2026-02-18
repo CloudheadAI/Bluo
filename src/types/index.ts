@@ -136,13 +136,13 @@ export interface PostsState {
   error: string | null;
 }
 
-export interface PaymentIntent {
+export interface Story {
   id: string;
-  amount: number;
-  currency: string;
-  status: 'pending' | 'succeeded' | 'failed' | 'canceled';
-  planId: string;
+  author: Pick<User, 'id' | 'username' | 'displayName' | 'avatarUrl'>;
+  content: string;
   createdAt: string;
+  expiresAt: string;
+  viewed: boolean;
 }
 
 export interface CheckoutSession {
@@ -151,4 +151,8 @@ export interface CheckoutSession {
   planId: string;
   tier: SubscriptionTier;
   status: 'open' | 'complete' | 'expired';
+}
+
+export interface ApiErrorResponse {
+  error: string;
 }

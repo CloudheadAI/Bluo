@@ -1,8 +1,26 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
+
+vi.mock('../services/api', () => ({
+  auth: {
+    login: vi.fn().mockResolvedValue({
+      user: {
+        id: '1', username: 'johndoe', email: 'john@example.com',
+        displayName: 'John Doe', bio: '', avatarUrl: '', coverUrl: '',
+        followersCount: 0, followingCount: 0, postsCount: 0, points: 0,
+        badges: [], subscriptionTier: 'free', createdAt: '2025-01-01T00:00:00Z',
+      },
+      token: 'test-token',
+    }),
+    register: vi.fn(),
+    resetPassword: vi.fn(),
+  },
+  setAuthToken: vi.fn(),
+  clearAuthToken: vi.fn(),
+}));
 
 function TestConsumer() {
   const { isAuthenticated, user, login, logout } = useAuth();
@@ -26,6 +44,10 @@ function renderWithProviders() {
   );
 }
 
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
 describe('AuthContext', () => {
   it('starts unauthenticated', () => {
     renderWithProviders();
@@ -39,7 +61,6 @@ describe('AuthContext', () => {
 
     await user.click(screen.getByText('Login'));
 
-    // Wait for the login to complete (mock has delay)
     await screen.findByText('authenticated');
     expect(screen.getByTestId('user-name')).toHaveTextContent('John Doe');
   });

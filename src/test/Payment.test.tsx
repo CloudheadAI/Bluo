@@ -1,55 +1,38 @@
-import { describe, it, expect, vi } from 'vitest';
-import { createCheckoutSession } from '../services/paymentService';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { ApiError } from '../services/api';
 
-describe('Payment Service', () => {
-  it('returns a complete session for the free plan', async () => {
-    const session = await createCheckoutSession('free');
-    expect(session.status).toBe('complete');
-    expect(session.tier).toBe('free');
-    expect(session.planId).toBe('plan-free');
+describe('Unified API Client', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
   });
 
-  it('returns a demo session for paid plans when no API_URL is set', async () => {
-    const session = await createCheckoutSession('pro');
-    expect(session.id).toMatch(/^cs_demo_/);
-    expect(session.tier).toBe('pro');
-    expect(session.status).toBe('complete');
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
-  it('throws for invalid plan tier', async () => {
-    await expect(
-      createCheckoutSession('invalid' as 'pro')
-    ).rejects.toThrow('Invalid plan selected');
+  it('ApiError has correct status and message', () => {
+    const err = new ApiError(404, 'Not found');
+    expect(err.status).toBe(404);
+    expect(err.message).toBe('Not found');
+    expect(err.name).toBe('ApiError');
+    expect(err instanceof Error).toBe(true);
   });
 
-  it('calls backend API when VITE_API_URL is set', async () => {
-    const mockResponse = {
-      id: 'cs_live_123',
-      url: 'https://checkout.stripe.com/test',
-      planId: 'plan-pro',
-      tier: 'pro',
-      status: 'open',
-    };
-
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve(mockResponse),
+  it('throws ApiError on non-ok response', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      json: () => Promise.resolve({ error: 'Invalid credentials' }),
     } as Response);
 
-    // Temporarily set the env variable via import.meta.env
-    const origEnv = import.meta.env.VITE_API_URL;
-    import.meta.env.VITE_API_URL = 'https://api.bluo.test';
+    const { auth } = await import('../services/api');
+    await expect(auth.login('bad@email.com', 'wrong')).rejects.toThrow('Invalid credentials');
+  });
 
-    try {
-      const session = await createCheckoutSession('pro');
-      expect(fetchSpy).toHaveBeenCalledWith(
-        'https://api.bluo.test/api/payments/create-checkout-session',
-        expect.objectContaining({ method: 'POST' })
-      );
-      expect(session.id).toBe('cs_live_123');
-    } finally {
-      import.meta.env.VITE_API_URL = origEnv;
-      fetchSpy.mockRestore();
-    }
+  it('throws ApiError on network failure', async () => {
+    vi.spyOn(globalThis, 'fetch').mockRejectedValueOnce(new TypeError('fetch failed'));
+
+    const { posts } = await import('../services/api');
+    await expect(posts.list()).rejects.toThrow('fetch failed');
   });
 });

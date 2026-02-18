@@ -1,10 +1,7 @@
 import { useState } from 'react';
 import type { AITextSuggestion, AIContentOptimization } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
-import {
-  generateAITextSuggestions,
-  generateContentOptimizations,
-} from '../../services/mockData';
+import { ai as aiApi } from '../../services/api';
 import { Button, LoadingSpinner } from '../common';
 
 interface AIToolsPanelProps {
@@ -37,11 +34,11 @@ export function AIToolsPanel({ onInsert, content }: AIToolsPanelProps) {
     setIsLoading(true);
     try {
       if (activeTab === 'optimize') {
-        const data = await generateContentOptimizations(content);
+        const data = await aiApi.contentOptimizations(content);
         setOptimizations(data);
       } else {
         const typeMap = { captions: 'caption', hashtags: 'hashtag', ideas: 'idea' } as const;
-        const data = await generateAITextSuggestions(content, typeMap[activeTab]);
+        const data = await aiApi.textSuggestions(content, typeMap[activeTab]);
         setSuggestions(data);
       }
     } catch {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Conversation } from '../../types';
-import { fetchConversations } from '../../services/mockData';
+import { messages as messagesApi } from '../../services/api';
 import { Avatar, LoadingSpinner, EmptyState } from '../common';
 
 export function MessageList() {
@@ -10,7 +10,7 @@ export function MessageList() {
   const [messageText, setMessageText] = useState('');
 
   useEffect(() => {
-    fetchConversations().then((data) => {
+    messagesApi.conversations().then((data) => {
       setConversations(data);
       setIsLoading(false);
     });
